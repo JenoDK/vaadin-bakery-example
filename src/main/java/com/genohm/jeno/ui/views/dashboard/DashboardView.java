@@ -11,6 +11,18 @@ import java.util.stream.IntStream;
 
 import org.springframework.beans.factory.annotation.Autowired;
 
+import com.genohm.jeno.backend.data.DashboardData;
+import com.genohm.jeno.backend.data.DeliveryStats;
+import com.genohm.jeno.backend.data.entity.Order;
+import com.genohm.jeno.backend.data.entity.OrderSummary;
+import com.genohm.jeno.backend.data.entity.Product;
+import com.genohm.jeno.backend.service.OrderService;
+import com.genohm.jeno.ui.MainView;
+import com.genohm.jeno.ui.dataproviders.OrdersGridDataProvider;
+import com.genohm.jeno.ui.utils.BakeryConst;
+import com.genohm.jeno.ui.utils.FormattingUtils;
+import com.genohm.jeno.ui.views.storefront.OrderCard;
+import com.genohm.jeno.ui.views.storefront.beans.OrdersCountDataWithChart;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.Tag;
 import com.vaadin.flow.component.UI;
@@ -33,18 +45,6 @@ import com.vaadin.flow.component.polymertemplate.PolymerTemplate;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.templatemodel.TemplateModel;
-import com.genohm.jeno.backend.data.DashboardData;
-import com.genohm.jeno.backend.data.DeliveryStats;
-import com.genohm.jeno.backend.data.entity.Order;
-import com.genohm.jeno.backend.data.entity.OrderSummary;
-import com.genohm.jeno.backend.data.entity.Product;
-import com.genohm.jeno.backend.service.OrderService;
-import com.genohm.jeno.ui.MainView;
-import com.genohm.jeno.ui.dataproviders.OrdersGridDataProvider;
-import com.genohm.jeno.ui.utils.BakeryConst;
-import com.genohm.jeno.ui.utils.FormattingUtils;
-import com.genohm.jeno.ui.views.storefront.OrderCard;
-import com.genohm.jeno.ui.views.storefront.beans.OrdersCountDataWithChart;
 
 @Tag("dashboard-view")
 @JsModule("./src/views/dashboard/dashboard-view.js")
@@ -72,9 +72,6 @@ public class DashboardView extends PolymerTemplate<TemplateModel> {
 	@Id("deliveriesThisMonth")
 	private Chart deliveriesThisMonthChart;
 
-	@Id("deliveriesThisYear")
-	private Chart deliveriesThisYearChart;
-
 	@Id("yearlySalesGraph")
 	private Chart yearlySalesGraph;
 
@@ -100,6 +97,8 @@ public class DashboardView extends PolymerTemplate<TemplateModel> {
 		grid.setSelectionMode(Grid.SelectionMode.NONE);
 		grid.setDataProvider(orderDataProvider);
 
+		UI.getCurrent().getPage().addJavaScript("https://code.highcharts.com/modules/pattern-fill.js");
+
 		DashboardData data = orderService.getDashboardData(MonthDay.now().getMonthValue(), Year.now().getValue());
 		populateYearlySalesChart(data);
 		populateDeliveriesCharts(data);
@@ -123,7 +122,6 @@ public class DashboardView extends PolymerTemplate<TemplateModel> {
 
 		todayCountChart.addChartLoadListener(chartLoadListener);
 		deliveriesThisMonthChart.addChartLoadListener(chartLoadListener);
-		deliveriesThisYearChart.addChartLoadListener(chartLoadListener);
 		yearlySalesGraph.addChartLoadListener(chartLoadListener);
 		monthlyProductSplit.addChartLoadListener(chartLoadListener);
 	}
@@ -192,14 +190,6 @@ public class DashboardView extends PolymerTemplate<TemplateModel> {
 
 	private void populateDeliveriesCharts(DashboardData data) {
 		LocalDate today = LocalDate.now();
-
-		// init the 'Deliveries in [this year]' chart
-		Configuration yearConf = deliveriesThisYearChart.getConfiguration();
-		configureColumnChart(yearConf);
-
-		yearConf.setTitle("Deliveries in " + today.getYear());
-		yearConf.getxAxis().setCategories(MONTH_LABELS);
-		yearConf.addSeries(new ListSeries("per Month", data.getDeliveriesThisYear()));
 
 		// init the 'Deliveries in [this month]' chart
 		Configuration monthConf = deliveriesThisMonthChart.getConfiguration();
